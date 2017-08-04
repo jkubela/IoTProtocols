@@ -9,7 +9,7 @@ import io
 
 #####################
 ###Read the config.ini
-with open("config.ini") as c:
+with open("config_mqtt.ini") as c:
         sample_config = c.read()
 config = ConfigParser.RawConfigParser(allow_no_value = True)
 config.readfp(io.BytesIO(sample_config))
@@ -25,12 +25,11 @@ br_alive = config.getint('mqtt_broker', 'alive')
 ch_pub = config.get('mqtt_c_general', 'topic_pub')
 ch_sub = config.get('mqtt_c_general', 'topic_sub')
 
+#Message details
+msg_qos = config.getint('mqtt_general', 'qos')
+
 #Helper
 client     = mqtt.Client()
-results	   = []
-counter	   = 0
-msg_qos    = config.getint('mqtt_general', 'qos')               #Quality of service
-
 
 ###############################################################
 ###########Main-Method: Used after starting the script
@@ -39,14 +38,14 @@ def main():
 
         global client
 
-        #Connect to the broker
+        ###Connect to the broker###
         client.connect(br_host, br_port, br_alive)
 
-        #Define MQTT-methods
+        ###Define MQTT-methods###
         client.on_connect = on_connect
         client.on_message = on_message
 
-        #Stay connected
+        ###Stay connected###
         client.loop_forever()
 
 ###############################################################
@@ -66,38 +65,20 @@ def on_message(client, userdata, msg):
        
 	global counter
 
-	#Timestamp after receiving the message
-	ts_receive = int(round(time.time()))
-	
 	#Encode the message
 	rec_payload = msg.payload.decode()
 
 	#Timestamp after encoding the message
-	ts_encode = int(round(time.time()))
+	ts_receive = int(round(time.time() * 1000))
 
-	#Get the timestamp before the message was send 
-	ts_send = rec_payload.split(";", 1)
-	
-	#Get the message payload in bytes
-	size_payload = len(rec_payload.encode("UTF-8"))
-
-	#Set the number of the received message
-	counter = counter + 1
-
-	#Set the packet-loss-rate
-	plr = 0
-
-	if rec_payload == "stop":
+	if rec_payload == 'Stop':
+		print('Stopped')
 		client.disconnect()
-		print (results)
+		sys.exit()
 	else:
-		#Build the output structure
-		results.append([counter, ts_send, ts_receive, ts_encode, size_payload, plr])
-
-	#payload = "error"
-	
-	send_payload = "ready"
-	client.publish(ch_pub,send_payload,0,False)
+		###return the timestamp to the server###	
+		send_payload = str(ts_receive)
+		client.publish(ch_pub,send_payload,0,False)
 
 ###############################################################
 ###########Call the Main-Method when the script is called
