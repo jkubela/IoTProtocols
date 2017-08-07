@@ -1,6 +1,5 @@
 import sleekxmpp
 import sys
-import time
 from sleekxmpp.xmlstream import ET, tostring
 from optparse import OptionParser
 
@@ -20,9 +19,9 @@ Globals
 xmpp = None
 user = 'alice'
 server = 'localhost'
-jid = user + '@' + server 
-pubNode = 'node2'
-subNode = 'node1'
+jidFrom = user + '@' + server 
+pubNode = 'node1'
+subNode = 'node2'
 pw = 'root'
 payload = None
 
@@ -31,11 +30,12 @@ Main-Method: Set handlers and  a connection to the broker
 *******************************************************************"""
 def main(i_msg):
 
-	global payload
 	global xmpp
+	global payload
+	
         payload = ET.fromstring("<test xmlns = 'test'>%s</test>" % i_msg)
 
-	xmpp = sleekxmpp.ClientXMPP(jid, pw)
+	xmpp = sleekxmpp.ClientXMPP(jidFrom, pw)
 	xmpp.add_event_handler("session_start", on_start)
 	xmpp.add_event_handler("pubsub_publish", on_receive)
 
@@ -49,34 +49,28 @@ Start-Handler: Is called when tThe connection is set.
 Try to create the sub and pub channel. Subscribe to the sub channel.
 *******************************************************************"""
 def on_start(event):
+	global xmpp
 
 	xmpp.send_presence()
 	xmpp.get_roster()	
-
+	
 	try:
-                xmpp['xep_0060'].create_node(jid, PubNode)
-        except:
-                print('PubNode cannot be created')
+		xmpp['xep_0060'].create_node(jidFrom, PubNode)
+	except:
+		print('PubNode cannot be created')
         try:
-                xmpp['xep_0060'].create_node(jid, SubNode)
+                xmpp['xep_0060'].create_node(jidFrom, SubNode)
         except:
                 print('SubNode cannot be created')
 
-	xmpp['xep_0060'].subscribe(jid, subNode, callback = on_sub)
-
-"""*******************************************************************
-Sub-Handler: Is called when we subscribed successfully.
-Publish a message at the pub channel.
-*******************************************************************"""
-def on_sub(i_msg):
-	xmpp['xep_0060'].publish(jid, pubNode, payload = payload)
+	xmpp['xep_0060'].subscribe(jidFrom, subNode)
 
 """*******************************************************************
 Receive-Handler: Is called when a message at the sub channel is pub'ed.
 Anwser it by published a message by yourself.
 *******************************************************************"""
 def on_receive(i_msg):
-        xmpp['xep_0060'].publish(jidFrom, pubNode, payload = payload)
+	xmpp['xep_0060'].publish(jidFrom, pubNode, payload = payload)
 	print('received')
 """*******************************************************************
 Init: Get userinput and call the Main-Method.
@@ -86,9 +80,8 @@ if __name__ == '__main__':
         optp.add_option("-m", "--message", dest="msg")
         opts, args = optp.parse_args()
 
-        if opts.msg is not None:
-                main(opts.msg)
-        else:
-                print('Please enter a message')
-
+	if opts.msg is not None:
+        	main(opts.msg)
+	else:
+		print('Please enter a message')
 
