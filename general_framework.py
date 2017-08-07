@@ -119,7 +119,7 @@ class TestScenario():
 		nrLoops = 0
 		clientScript = self.clientScript + 'throughput.py'
 
-		self.start_client_script(clientScript, '')
+		#self.start_client_script(clientScript, '')
 
 		while self.payloadList:
 	        	self.payloadSize = int(self.payloadList.pop(0))
