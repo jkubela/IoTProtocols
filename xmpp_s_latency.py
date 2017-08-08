@@ -32,7 +32,7 @@ config.readfp(io.BytesIO(sample_config))
 xmpp = None
 payload = None
 
-user = 'alice'
+user = 'bob'
 server = 'localhost'
 jid = user + '@' + server
 pubNode = 'node2'
