@@ -41,16 +41,13 @@ pw = 'root'
 
 ###Set analysis globals and constans###
 rounds     = 0
-startTime = 0
 results    = []
-tReceive  = 0
-tSendB   = 0
-tSendA   = 0
+tSend   = 0
 
-secTest   = 10  #config.getint('mqtt_general', 'duration')
+roundsTotal = 10  #config.getint('mqtt_general', 'duration')
 msgPaySize = 0
 plr        = 0
-resultsStructure = namedtuple('Results','round msg_payload plr time_before_sending time_after_sending time_received')
+resultsStructure = namedtuple('Results','round msg_payload plr time_before_sending time_received')
 
 """*******************************************************************
 Main-Method: Set handlers and  a connection to the broker
@@ -70,7 +67,7 @@ def main(i_msg, i_plr):
 	###Connect to the broker and set handlers###
 	xmpp = sleekxmpp.ClientXMPP(jid, pw)
 	xmpp.add_event_handler("session_start", on_start)
-	xmpp.add_event_handler("pubsub_publish", on_receive)
+	xmpp.add_event_handler("message", on_message)
 
 	xmpp.register_plugin('xep_0060') #PubSub
 
@@ -98,52 +95,41 @@ def on_start(event):
 	xmpp['xep_0060'].subscribe(jid, subNode, callback = on_sub)
 
 """*******************************************************************
+Message-Handler: Is called when a message is received.
+Gets the confirmation from the client that the message arrived at ts.
+*******************************************************************"""
+def on_message(msg):
+###message received:
+	
+        global rounds
+        global results
+        global tSend
+
+	tReceive = msg['body']
+	rounds = rounds + 1
+	
+        node = resultsStructure(rounds, msgPaySize, plr, tSend, tReceive)
+        results.append(node)
+
+        if rounds <= roundsTotal:
+		tSend = int(round(time.time() * 1000 ))
+                xmpp['xep_0060'].publish(jid, pubNode, payload = payload)
+	else:
+                xmpp.disconnect()
+                del results[0]
+                print('Finished')
+                print results
+
+"""*******************************************************************
 Sub-Handler: Is called when we subscribed successfully.
 Publish a message at the pub channel.
 *******************************************************************"""
 def on_sub(i_msg):
-	
-	global tSendB
-	global tSendA
+        global tSend
 
-	tSendB = int(round(time.time() * 1000 ))
+	tSend = int(round(time.time() * 1000 ))
 	xmpp['xep_0060'].publish(jid, pubNode, payload = payload)
-	tSendA = int(round(time.time() * 1000 ))
 
-"""*******************************************************************
-Receive-Handler: Is called when a message at the sub channel is pub'ed.
-Anwser it by published a message by yourself.
-*******************************************************************"""
-def on_receive(i_msg):
-	global rounds
-	global flagEnd
-	global startTime
-	global results
-	global node
-	global tSendB
-	global tSendA
-
-	tReceive = int(round(time.time() * 1000 ))
-	t = tReceive - tSendB
-	print(str(t))
-	rounds = rounds + 1
-        
-	node = resultsStructure(rounds, msgPaySize, plr, tSendB, tSendA, tReceive)
-        results.append(node)
-	
-	if startTime == 0:
-		startTime = time.time()
-	
-	if ((startTime + secTest) >= time.time()):
-       		tSendB = int(round(time.time() * 1000 ))
-		xmpp['xep_0060'].publish(jidFrom, pubNode, payload = payload)
-	        tSendA = int(round(time.time() * 1000 ))
-	else:
-		xmpp.disconnect()
-		del results[0]
-		print('Finished')
-		print results
-		
 """*******************************************************************
 Init: Get userinput and call the Main-Method.
 *******************************************************************"""
@@ -157,5 +143,3 @@ if __name__ == '__main__':
                 main(opts.msg, opts.plr)
         else:
                 print('Please enter a message and a PLR')
-
-

@@ -81,6 +81,9 @@ On_Connect: Behaviour after connection is set
 Connecting to the given channel
 ***********************************************************"""
 def on_connect(client, userdata, flags, rc):
+
+	global t_send_b
+	global t_send_a
    
 	print('Connected to broker ' + str(br_host) + ':' + str(br_port) + ' with result code ' + str(rc))
         client.subscribe(ch_sub, msg_qos)
@@ -107,7 +110,7 @@ def on_message(client, userdata, msg):
 
 	###Append the output-structure###
         #results.append([rounds, t_receive, t_send_b, t_send_a, msg_pay, plr])
-	node = results_structure(rounds, msg_pay_size, plr, t_send_b, t_send_b, t_receive)
+	node = results_structure(rounds, msg_pay_size, plr, t_send_b, t_send_a, t_receive)
 	results.append(node)
 
 	if start_time == 0:

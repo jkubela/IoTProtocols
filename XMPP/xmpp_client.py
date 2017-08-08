@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
 	#opts, args = optp.parse_args()
 
-	xmpp = SendMsgBot('alice@rasp', 'root')
+	xmpp = SendMsgBot('bob@localhost', 'root')
 	#xmpp.register_plugin('xep_0030')
 	#xmpp.register_plugin('xep_0199')
 	#xmpp.ssl_version = ssl.PROTOCOL_SSLv3
