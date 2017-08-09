@@ -52,7 +52,7 @@ def main(i_msg):
 
         xmpp.register_plugin('xep_0004') ###Dataforms
 	xmpp.register_plugin('xep_0060') ###PubSub
-
+	print('Connecting')
 	xmpp.connect()
 	xmpp.process(block=True)
 
@@ -61,7 +61,7 @@ Start-Handler: Is called when tThe connection is set.
 Try to create the sub and pub channel. Subscribe to the sub channel.
 *******************************************************************"""
 def on_start(event):
-
+	print('started')
 	xmpp.send_presence()
 	xmpp.get_roster()	
 	

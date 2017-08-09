@@ -118,8 +118,8 @@ class TestScenario():
 		###Local variables###
 		nrLoops = 0
 		clientScript = self.clientScript + 'throughput.py'
-
-		#self.start_client_script(clientScript, '')
+		print('starting client script ' + clientScript)
+		self.start_client_script(clientScript, '-m test')
 
 		while self.payloadList:
 	        	self.payloadSize = int(self.payloadList.pop(0))
@@ -200,7 +200,7 @@ class TestScenario():
 	def start_client_script(self, scriptname, scriptparams):
                
 		###Create the Shell command###
-		cmdStart = 'cd ~/Desktop/Testszenario; python ' + scriptname
+		cmdStart = 'cd ~/Desktop/IoTProtocols; python ' + scriptname
 		
 		ssh = paramiko.SSHClient()
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -239,7 +239,8 @@ class TestScenario():
 			import amqp_s_throughput as throughput
 			import amqp_s_latency as latency
 		elif protocol == 'XMPP':
-			print('Not implemented yet')
+			import xmpp_s_throughput as throughput
+			import xmpp_s_latency as latency
 		elif protocol == 'COAP':
 			print('Not implemented yet')
 		elif protocol == 'DDS':
@@ -249,7 +250,7 @@ class TestScenario():
 			print('- MQTT')
 			print('- AMQP')
 			print('- COAP')
-			print('- DDS')
+			#print('- DDS')
 			sys.exit()
         """************************************************************
         Method:
