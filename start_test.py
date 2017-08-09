@@ -105,8 +105,11 @@ def create_csv(csv_name, method, list):
 			writer.writerow(('msg', 'msg_payload', 'plr', 'time_before_sending', 'time_received'))
 			writer.writerows([(data.msg, data.payload, data.plr, data.time_before_sending, data.time_received) for data in list])
 
-		elif gtest == 'cpu':
-                        writer.writerow(('msg_payload', 'plr', 'ts', 'cpu'))
+		elif g_test == 'cpu':
+                        if list is None:
+				print('results is none')
+				sys.exit()
+			writer.writerow(('msg_payload', 'plr', 'ts', 'cpu'))
                         writer.writerows([(data.payload, data.plr, data.ts, data.cpu) for data in list])
 
 		else:
