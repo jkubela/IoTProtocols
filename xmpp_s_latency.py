@@ -6,6 +6,7 @@ from optparse import OptionParser
 from collections import namedtuple
 import io
 import gc
+import ConfigParser
 
 """*******************************************************************
 Python version lower than 2 does not use UTF-8 encode as default, so
@@ -21,30 +22,29 @@ else:
 Globals
 *******************************************************************"""
 ###Read the config.ini###
-"""
 with open("config_xmpp.ini") as c:
         sample_config = c.read()
 config = ConfigParser.RawConfigParser(allow_no_value = True)
 config.readfp(io.BytesIO(sample_config))
-"""
 
 ###Set xmpp globals and constans###
 xmpp = None
 payload = None
 
-user = 'bob'
-server = 'localhost'
-jid = user + '@' + server
-pubNode = 'node2'
-subNode = 'node1'
-pw = 'root'
+user = config.get('xmpp_server', 'user2')
+host = config.get('xmpp_server', 'host')
+pubSubServer = config.get('xmpp_server', 'pubsub')
+jid = user + '@' + host
+pubNode = config.get('xmpp_s_general', 'node_pub')
+subNode = config.get('xmpp_s_general', 'node_sub')
+pw = config.get('xmpp_server', 'pw2')
 
 ###Set analysis globals and constans###
 rounds     = 0
 results    = []
 tSend   = 0
 
-roundsTotal = 10  #config.getint('mqtt_general', 'duration')
+roundsTotal = config.getint('xmpp_general', 'msg_amount')
 msgPaySize = 0
 plr        = 0
 resultsStructure = namedtuple('Results','round msg_payload plr time_before_sending time_received')
@@ -69,6 +69,7 @@ def main(i_msg, i_plr):
 	xmpp.add_event_handler("session_start", on_start)
 	xmpp.add_event_handler("message", on_message)
 
+        xmpp.register_plugin('xep_0004') ###Dataforms
 	xmpp.register_plugin('xep_0060') #PubSub
 
 	xmpp.connect()
@@ -81,18 +82,25 @@ Try to create the sub and pub channel. Subscribe to the sub channel.
 def on_start(event):
 
 	xmpp.send_presence()
-	xmpp.get_roster()	
+        xmpp.get_roster()
 
-	try:
-                xmpp['xep_0060'].create_node(jid, PubNode)
+        ###Set the publish model of the nodes to open so every user can publish content###
+        form = xmpp['xep_0004'].stanza.Form()
+        form['type'] = 'submit'
+        form.add_field(var='pubsub#publish_model', value='open')
+
+     	 ###Try to create the used nodes###
+        try:
+                xmpp['xep_0060'].create_node(pubSubServer, pubNode, config=form)
         except:
                 print('PubNode cannot be created')
         try:
-                xmpp['xep_0060'].create_node(jid, SubNode)
+                xmpp['xep_0060'].create_node(pubSubServer, subNode, config=form)
         except:
                 print('SubNode cannot be created')
 
-	xmpp['xep_0060'].subscribe(jid, subNode, callback = on_sub)
+        ###Subscribe to a node###
+        xmpp['xep_0060'].subscribe(pubSubServer, subNode, callback = on_sub)
 
 """*******************************************************************
 Message-Handler: Is called when a message is received.
@@ -104,16 +112,18 @@ def on_message(msg):
         global rounds
         global results
         global tSend
-
+	
 	tReceive = msg['body']
 	rounds = rounds + 1
-	
-        node = resultsStructure(rounds, msgPaySize, plr, tSend, tReceive)
-        results.append(node)
+	t = int(tReceive) - tSend
+	print(str(t))	
 
+	node = resultsStructure(rounds, msgPaySize, plr, tSend, tReceive)
+        results.append(node)
+	
         if rounds <= roundsTotal:
 		tSend = int(round(time.time() * 1000 ))
-                xmpp['xep_0060'].publish(jid, pubNode, payload = payload)
+        	xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
 	else:
                 xmpp.disconnect()
                 del results[0]
@@ -128,7 +138,8 @@ def on_sub(i_msg):
         global tSend
 
 	tSend = int(round(time.time() * 1000 ))
-	xmpp['xep_0060'].publish(jid, pubNode, payload = payload)
+        xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
+	print('MSG published')
 
 """*******************************************************************
 Init: Get userinput and call the Main-Method.

@@ -37,7 +37,7 @@ pubSubServer = config.get('xmpp_server', 'pubsub')
 jid = user + '@' + host
 pubNode = config.get('xmpp_s_general', 'node_pub')
 subNode = config.get('xmpp_s_general', 'node_sub')
-pw = config.get('xmpp_server', 'pw1')
+pw = config.get('xmpp_server', 'pw2')
 
 ###Set analysis globals and constans###
 rounds     = 0
@@ -53,7 +53,7 @@ plr        = 0
 resultsStructure = namedtuple('Results','round msg_payload plr time_before_sending time_after_sending time_received')
 
 """*******************************************************************
-Main-Method: Set handlers and  a connection to the broker
+Main-Method: Set handlers and a connection to the broker
 *******************************************************************"""
 def main(i_msg, i_plr):
 
@@ -79,7 +79,7 @@ def main(i_msg, i_plr):
 	xmpp.process(block=True)
 
 """*******************************************************************
-Start-Handler: Is called when tThe connection is set.
+Start-Handler: Is called when the connection is set.
 Try to create the sub and pub channel. Subscribe to the sub channel.
 *******************************************************************"""
 def on_start(event):
