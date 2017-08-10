@@ -10,7 +10,7 @@ import gc
 """************************************************************
 Set the globals and get data from the config file
 ************************************************************"""
-###Read the config.ini###
+###Read the config###
 with open("config_mqtt.ini") as c:
 	sample_config = c.read()
 config = ConfigParser.RawConfigParser(allow_no_value = True)
@@ -23,9 +23,9 @@ br_port  = config.getint('mqtt_address', 'broker_port')
 br_alive = config.getint('mqtt_broker', 'alive')
 
 #Message characteristics
-msg_qos    = config.getint('mqtt_general', 'qos')		#Quality of service
+msg_qos    = config.getint('mqtt_general', 'qos')
 msg_retain = config.getboolean('mqtt_general', 'retain')
-msg_payload = 'default'						#Message payload: Given with initial script call
+msg_payload = 'default'
 
 #Channels
 ch_pub = config.get('mqtt_s_general', 'topic_pub')
@@ -38,10 +38,10 @@ sec_test   = config.getint('mqtt_general', 'duration')
 results	   = []
 client	   = mqtt.Client()
 msg_pay_size = 0
-plr	   = '0%'						#Packet-Loss-Rate: Given with initial script call
-t_receive  = 0							#Message received (time): Set at on_message
-t_send_b   = 0							#Message send (time before)
-t_send_a   = 0							#Message send (time after)
+plr	   = 0
+t_receive  = 0
+t_send_b   = 0
+t_send_a   = 0
 results_structure = namedtuple('Results','round msg_payload plr time_before_sending time_after_sending time_received')
 flag_end = ' '
 
@@ -105,17 +105,19 @@ def on_message(client, userdata, msg):
 	global t_receive
 	global results
 	global flag_end
-	
+
+	###Set the current timestamp: Message received###	
 	t_receive = int(round(time.time() * 1000 ))
 
 	###Append the output-structure###
-        #results.append([rounds, t_receive, t_send_b, t_send_a, msg_pay, plr])
-	node = results_structure(rounds, msg_pay_size, plr, t_send_b, t_send_a, t_receive)
+     	node = results_structure(rounds, msg_pay_size, plr, t_send_b, t_send_a, t_receive)
 	results.append(node)
 
+	###Check if the start time is already set. Else: Set it###
 	if start_time == 0:
 		start_time = time.time()
 
+	###Check if the time running this test is over###
 	if ((start_time + sec_test) >= time.time()):
 		on_answer(msg)
 		rounds += 1
@@ -123,9 +125,9 @@ def on_message(client, userdata, msg):
 		on_stop_msg()
 		client.unsubscribe(ch_sub)
 		client.disconnect()
-		print("END")
-		del results[0]
 		flag_end = 'X'
+		del results[0]
+		print("Finished")
 
 """*************************************************************
 Answer to a received message:

@@ -5,7 +5,6 @@ import io
 """***********************************************************
 Set the globals and get data from the config file
 ***********************************************************"""
-
 ###Read the config###
 with open("config_mqtt.ini") as c:
         sample_config = c.read()
@@ -71,4 +70,3 @@ Call the Main-Method when the script is called
 ***********************************************************"""
 if __name__ == "__main__":
         main()
-
