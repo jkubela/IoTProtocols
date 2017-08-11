@@ -57,6 +57,7 @@ def main(i_protocol, i_test):
 	###Locals###
 	broker_up = None
 	broker_clean = None
+	time_synch = None
 	payload = None
 	plr = None
 	msg = None
@@ -69,6 +70,8 @@ def main(i_protocol, i_test):
 	check_yn(broker_clean)
 	client_script = raw_input('Is the script for ' + i_test + ' started at the client?[Y/N] ')
 	check_yn(client_script)
+	time_sync = raw_input('Is the time synced for all devices? [Y/N] ')
+	check_yn(time_sync)
 
 	###Prepare everthing for the test###
 	print('*' * 50)
