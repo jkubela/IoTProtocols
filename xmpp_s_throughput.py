@@ -32,9 +32,11 @@ xmpp = None
 payload = None
 
 user = config.get('xmpp_server', 'user2')
+touser = config.get('xmpp_server', 'user1')
 host = config.get('xmpp_server', 'host')
 pubSubServer = config.get('xmpp_server', 'pubsub')
 jid = user + '@' + host
+tojid = touser + '@' + host
 pubNode = config.get('xmpp_s_general', 'node_pub')
 subNode = config.get('xmpp_s_general', 'node_sub')
 pw = config.get('xmpp_server', 'pw2')
@@ -51,6 +53,7 @@ secTest   = config.getint('xmpp_general', 'duration')
 msgPaySize = 0
 plr        = 0
 resultsStructure = namedtuple('Results','round msg_payload plr time_before_sending time_after_sending time_received')
+g_msg = None
 
 """*******************************************************************
 Main-Method: Set handlers and a connection to the broker
@@ -61,11 +64,13 @@ def main(i_msg, i_plr):
 	global msgPaySize
 	global plr
 	global xmpp
+	global g_msg
 
 	###Set global variables and constants###
         payload = ET.fromstring("<test xmlns = 'test'>%s</test>" % i_msg)
         msgPaySize = len(i_msg)
         plr = i_plr
+	g_msg = i_msg
 
 	###Connect to the broker and set handlers###
 	xmpp = sleekxmpp.ClientXMPP(jid, pw)
@@ -86,6 +91,9 @@ def on_start(event):
 
 	xmpp.send_presence()
 	xmpp.get_roster()	
+
+        ###Send a message with the payload to the client, so that it can be send back###
+        xmpp.send_message(mto = tojid, mbody = g_msg, mtype='chat')
 
 	###Set the publish model of the nodes to open so every user can publish content###
 	form = xmpp['xep_0004'].stanza.Form()
@@ -148,7 +156,7 @@ def on_receive(i_msg):
 		xmpp.disconnect()
 		del results[0]
 		print('Finished')
-		print results
+		return results
 		
 """*******************************************************************
 Init: Get userinput and call the Main-Method.

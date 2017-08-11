@@ -35,26 +35,36 @@ jid = user + '@' + host
 pubNode = config.get('xmpp_c_general', 'node_pub')
 subNode = config.get('xmpp_c_general', 'node_sub')
 pw = config.get('xmpp_server', 'pw1')
+g_msg = None
 
 """*******************************************************************
 Main-Method: Set handlers and  a connection to the broker
 *******************************************************************"""
-def main(i_msg):
+def main():
 
 	global xmpp
 	global payload
+	global g_msg
 	
-        payload = ET.fromstring("<test xmlns = 'test'>%s</test>" % i_msg)
-
 	xmpp = sleekxmpp.ClientXMPP(jid, pw)
 	xmpp.add_event_handler("session_start", on_start)
 	xmpp.add_event_handler("pubsub_publish", on_receive)
+	xmpp.add_event_handler("message", on_message)
 
         xmpp.register_plugin('xep_0004') ###Dataforms
 	xmpp.register_plugin('xep_0060') ###PubSub
 	print('Connecting')
 	xmpp.connect()
 	xmpp.process(block=True)
+
+"""*******************************************************************
+Message-Handler
+*******************************************************************"""
+def on_message(msg):
+	global payload
+	
+	body = msg['body']
+        payload = ET.fromstring("<test xmlns = 'test'>%s</test>" % body)
 
 """*******************************************************************
 Start-Handler: Is called when tThe connection is set.
@@ -95,12 +105,4 @@ def on_receive(i_msg):
 Init: Get userinput and call the Main-Method.
 *******************************************************************"""
 if __name__ == '__main__':
-        optp = OptionParser()
-        optp.add_option("-m", "--message", dest="msg")
-        opts, args = optp.parse_args()
-
-	if opts.msg is not None:
-        	main(opts.msg)
-	else:
-		print('Please enter a message')
-
+	main()
