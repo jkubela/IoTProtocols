@@ -54,7 +54,7 @@ def main(i_payload, i_plr):
 	global client
 	global t_send_a
 	global t_send_b
-	global message_payload
+	global msg_payload
 	global plr
 	global msg_pay_size
 

@@ -82,6 +82,7 @@ def main(i_protocol, i_test):
 		###Create the message###
 		print('Creating the message...')
 		msg = create_msg.main(payload)
+		print(msg)
 
 		for plr in gl_plr:
 
@@ -101,7 +102,7 @@ def main(i_protocol, i_test):
                                 csvName = g_dir + '/' + i_protocol + '_' + i_test
                                 create_csv(csvName, 'a+', i_results)
 
-                                csvName = g_dir + '/' + i_protocol + '_' + i_test + '_' + str(g_plr) + '_' + str(g_payload) + '_' + str(time.strftime("%Y%m%d")) + '_' + str(time.strftime("%H%M%S"))
+                                csvName = g_dir + '/' + g_protocol + '_' + g_test + '_' + str(plr) + '_' + str(payload) + '_' + str(time.strftime("%Y%m%d")) + '_' + str(time.strftime("%H%M%S"))
                                 create_csv(csvName, 'a+', i_results)
 
 """*******************************************************************
