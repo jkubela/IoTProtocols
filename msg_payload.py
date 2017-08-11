@@ -7,7 +7,7 @@ import sys
 
 def main(arg1):
 	ret = string_generator(arg1)
-	print (ret)
+	return ret
 
 ##################################################################################
 ###Define the string-generator: Append "length" ascii symbols to the output-string
