@@ -143,14 +143,14 @@ def create_csv(csv_name, method, list):
 
 		elif g_test == 'latency':
 			writer.writerow(('msg', 'msg_payload', 'plr', 'time_before_sending', 'time_received'))
-			writer.writerows([(data.msg, data.payload, data.plr, data.time_before_sending, data.time_received) for data in list])  #str(int(data.time_received) - int(data.time_before_sending))) for data in list])
+			writer.writerows([(data.msg, data.payload, data.plr, data.time_before_sending, data.time_received, str(int(data.time_received) - int(data.time_before_sending))) for data in list])
 
 		elif g_test == 'cpu':
                         if list is None:
 				print('results is none')
 				sys.exit()
-			writer.writerow(('msg_payload', 'plr', 'ts', 'cpu'))
-                        writer.writerows([(data.payload, data.plr, data.ts, data.cpu) for data in list])
+			writer.writerow(('msg_payload', 'plr', 'ts', 'latency', 'cpu'))
+                        writer.writerows([(data.payload, data.plr, data.ts, data.latency, data.cpu) for data in list])
 
 		else:
 			print('ATTENTION, CANNOT WRITE RESULTS - PLEASE EXPAND THE CREATE_CSV-METHOD')

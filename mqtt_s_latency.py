@@ -142,6 +142,7 @@ def stop_test():
 	client.unsubscribe(ch_sub)
 	client.disconnect()
 	flag_end = 'X'
+        del results[0]
 	print('Finished successful')
 
 """************************************************************
