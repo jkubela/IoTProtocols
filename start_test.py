@@ -138,14 +138,12 @@ def create_csv(csv_name, method, list):
 		writer = csv.writer(csvfile, quoting=csv.QUOTE_ALL)
 
 		if g_test == 'throughput':
-			#writer.writerow(('round', 'msg_payload', 'plr', 'time_before_sending', 'time_after_sending', 'time_received'))
-			#writer.writerows([(data.round, data.msg_payload, data.plr, data.time_before_sending, data.time_after_sending, data.time_received) for data in list])
                         writer.writerow(('round', 'msg_payload', 'plr', 'time_before_sending', 'time_received', 'time_diff'))
-                        writer.writerows([(data.round, data.msg_payload, data.plr, data.time_before_sending, data.time_received, str(int(data.time_received) - int (data.time_before_sending))) for data in list])
+                        writer.writerows([(data.round, data.msg_payload, data.plr, data.time_before_sending, data.time_received, str(int(data.time_received) - int(data.time_before_sending))) for data in list])
 
 		elif g_test == 'latency':
-			writer.writerow(('msg', 'msg_payload', 'plr', 'time_before_sending', 'time_received', 'time_diff'))
-			writer.writerows([(data.msg, data.payload, data.plr, data.time_before_sending, data.time_received, str(int(data.time_received) - int (data.time_before_sending))) for data in list])
+			writer.writerow(('msg', 'msg_payload', 'plr', 'time_before_sending', 'time_received'))
+			writer.writerows([(data.msg, data.payload, data.plr, data.time_before_sending, data.time_received) for data in list])  #str(int(data.time_received) - int(data.time_before_sending))) for data in list])
 
 		elif g_test == 'cpu':
                         if list is None:
