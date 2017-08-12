@@ -47,6 +47,11 @@ t_send_a   = 0                                                  #Message send (t
 results_structure = namedtuple('Results','round msg_payload plr time_before_sending time_after_sending time_received')
 flag_end = ' '
 
+
+#User
+user = config.get('amqp_server', 'user2')
+pw = config.get('amqp_server', 'pw2')
+
 """************************************************************
 Main-Method: Used after starting the script
 Connecting to the given host forever
@@ -64,8 +69,9 @@ def main(i_payload, i_plr):
         plr = i_plr
 
 	###Connect to the broker###
-	parameters = pika.ConnectionParameters(host=br_host, port=br_port)
-	connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect)
+        credentials = pika.PlainCredentials(user, pw)
+        parameters = pika.ConnectionParameters(br_host, br_port, '/', credentials)
+        connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect)
 	
 	###Stay connected###
 	connection.ioloop.start()

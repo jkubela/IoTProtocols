@@ -30,6 +30,10 @@ ch_ack = config.get('amqp_c_general', 'ch_ack')
 channel = None
 connection = None
 
+#User
+user = config.get('amqp_server', 'user1') 
+pw = config.get('amqp_server', 'pw1')
+
 """************************************************************
 Main-Method: Used after starting the script
 Connecting to the given host forever
@@ -38,7 +42,8 @@ def main():
 	global connection
 
 	###Connect to the broker###
-	parameters = pika.ConnectionParameters(host=br_host, port=br_port)
+	credentials = pika.PlainCredentials(user, pw)
+	parameters = pika.ConnectionParameters(br_host, br_port, '/', credentials)
 	connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect)
 
 	###Stay connected###
@@ -85,13 +90,18 @@ On_Callback: Behaviour after receiving a message
 Append the results and send a new  message
 ************************************************************"""
 def on_callback(channel, method, header, body):
+
+	global connection
 	
 	msg_payload = body
 	t_received = int(round(time.time() * 1000))
 	
 	if msg_payload == 'Stop':
-		print('Stopped')
-		sys.exit()
+		print('Deconnecting...')
+		connection.close()
+		connection = None
+		print('Reconnecting...')
+		main()
 	else:
 		send_payload = str(t_received)
 		print(send_payload)

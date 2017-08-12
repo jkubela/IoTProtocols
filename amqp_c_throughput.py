@@ -28,17 +28,23 @@ ch_pub = config.get('amqp_c_general', 'topic_pub')
 ch_sub = config.get('amqp_c_general', 'topic_sub')
 channel = None
 
+#User
+user = config.get('amqp_server', 'user1')
+pw = config.get('amqp_server', 'pw1')
+
+
 """************************************************************
 Main-Method: Used after starting the script
 Connecting to the given host forever
 ************************************************************"""
 def main():
 
-        ###Connect to the broker###
-        parameters = pika.ConnectionParameters(host=br_host, port=br_port)
+	###Connect to the broker###
+        credentials = pika.PlainCredentials(user, pw)
+        parameters = pika.ConnectionParameters(br_host, br_port, '/', credentials)
         connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect)
-
-        ###Stay connected###
+	
+	###Stay connected###
         connection.ioloop.start()
 
 """***********************************************************
