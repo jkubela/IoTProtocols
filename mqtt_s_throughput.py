@@ -106,7 +106,7 @@ def on_connect(client, userdata, flags, rc):
 """************************************************************
 ON_MESSAGE: Is called when message is published to the sub channel.
 -Get statistical data.
--Send the message back.
+-Publish the message again.
 ************************************************************"""
 def on_message(client, userdata, msg):
 
