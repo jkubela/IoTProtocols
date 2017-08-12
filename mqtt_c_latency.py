@@ -29,24 +29,24 @@ ch_sub = config.get('mqtt_c_general', 'topic_sub')
 msg_qos = config.getint('mqtt_general', 'qos')
 
 #Helper
-client     = mqtt.Client()
+g_client     = mqtt.Client()
 
 ###############################################################
 ###########Main-Method: Used after starting the script
 #Connecting to the given broker forever
 def main():
 
-        global client
+        global g_client
 
         ###Connect to the broker###
-        client.connect(br_host, br_port, br_alive)
+        g_client.connect(br_host, br_port, br_alive)
 
         ###Define MQTT-methods###
-        client.on_connect = on_connect
-        client.on_message = on_message
+        g_client.on_connect = on_connect
+        g_client.on_message = on_message
 
         ###Stay connected###
-        client.loop_forever()
+        g_client.loop_forever()
 
 ###############################################################
 ###########Behaviour after connection is set:
@@ -54,7 +54,7 @@ def main():
 
 def on_connect(client, userdata, flags, rc):
         print("Connected to broker " + str(br_host) + ":" + str(br_port) + " with result code " + str(rc))
-        client.subscribe(ch_sub, msg_qos)
+        g_client.subscribe(ch_sub, msg_qos)
         print("Subscribed to topic " + str(ch_sub) + " with QoS " + str(msg_qos))
 
 ###############################################################
@@ -63,7 +63,7 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg):
        
-	global counter
+	global g_client
 
 	#Encode the message
 	rec_payload = msg.payload.decode()
@@ -72,9 +72,13 @@ def on_message(client, userdata, msg):
 	ts_receive = int(round(time.time() * 1000))
 
 	if rec_payload == 'Stop':
-		print('Stopped')
-		client.disconnect()
-		sys.exit()
+		print('Disconnecting...')
+		g_client.disconnect()
+		g_client = mqtt.Client()
+		rec_payload = None
+		ts_receive = 0
+		print('Reconnecting...')
+		main()
 	else:
 		###return the timestamp to the server###	
 		send_payload = str(ts_receive)
