@@ -4,7 +4,6 @@
 #########################################################################################################
 ######################################################################################################"""
 
-
 import sys
 from importlib import import_module
 import time
@@ -14,6 +13,7 @@ import msg_payload as create_msg
 import ConfigParser
 import io
 from collections import namedtuple
+import subprocess
 
 """*******************************************************************
 Globals
@@ -41,6 +41,11 @@ g_server_script = None
 g_dir           = None
 g_protocol      = None
 g_test          = None
+g_cmd_setnet = None
+
+###Set constants###
+gc_cmd_delnet = 'sudo tcdel --device eth0'
+gc_cmd_setnet = 'sudo tcset --device eth0'
 
 """*******************************************************************
 MAIN: Is called after the script has been started.
@@ -91,10 +96,18 @@ def main(i_protocol, i_test):
 
 			for latency in gl_latency:
 				
-				###Check again if the user has prepared everything as needed###
-				settings = raw_input('Please set the PLR to ' + str(plr) + ' and the latency to ' + str(latency) + ' [Y/N] ')
-				check_yn(settings)
+				###Set the given network characteristics###
+				g_cmd_setnet = gc_cmd_setnet + ' --loss ' + plr +  ' --delay ' + latency
 				
+				try:
+					subprocess.call([gc_cmd_delnet], shell=True)
+				except:
+					print('Error while deleting network settings')
+				try:
+					subprocess.call([g_cmd_setnet], shell=True)
+				except:
+					print('Error while setting network settings')
+		
 				###Reset the globals of the script###
 				reload(g_server_script)
                                 
