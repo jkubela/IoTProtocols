@@ -33,10 +33,10 @@ def main():
 
 	###Globals###
         global g_client
-
-        ###Connect to the broker###
+        
+	###Connect to the broker###
         try:
-                client.connect(br_host, br_port, br_alive)
+                g_client.connect(br_host, br_port, br_alive)
         except:
                 print('Cannot connect to the broker. Test failed!')
                 sys.exit()
