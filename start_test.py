@@ -79,7 +79,7 @@ def main(i_protocol, i_test):
 	check_yn(time_sync)
 
 	###Prepare everthing for the test###
-	print('*' * 50)
+	print('*' * 100)
 	print('Preparing the test...')
 	
 	prepare()
@@ -90,7 +90,6 @@ def main(i_protocol, i_test):
 		###Create the message###
 		print('Creating the message...')
 		msg = create_msg.main(payload)
-		print(msg)
 
 		for plr in gl_plr:
 
@@ -98,7 +97,6 @@ def main(i_protocol, i_test):
 				
 				###Set the given network characteristics###
 				g_cmd_setnet = gc_cmd_setnet + ' --loss ' + plr +  ' --delay ' + latency
-				
 				try:
 					subprocess.call([gc_cmd_delnet], shell=True)
 				except:
@@ -108,6 +106,12 @@ def main(i_protocol, i_test):
 				except:
 					print('Error while setting network settings')
 		
+				print('*' * 50)
+			        print('Test started with the following settings: ')
+				print('Payload: ' + str(payload))
+				print('PLR: ' + str(plr))
+				print('Latency: ' + str(latency))
+
 				###Reset the globals of the script###
 				reload(g_server_script)
                                 
@@ -120,6 +124,8 @@ def main(i_protocol, i_test):
 
                                 csvName = g_dir + '/' + g_protocol + '_' + g_test + '_' + str(plr) + '_' + str(payload) + '_' + str(time.strftime("%Y%m%d")) + '_' + str(time.strftime("%H%M%S"))
                                 create_csv(csvName, 'a+', i_results)
+				
+				print('Test finished')
 
 """*******************************************************************
 CREATE_CSV: Creates a csv-file for the given list.
@@ -132,12 +138,14 @@ def create_csv(csv_name, method, list):
 		writer = csv.writer(csvfile, quoting=csv.QUOTE_ALL)
 
 		if g_test == 'throughput':
-			writer.writerow(('round', 'msg_payload', 'plr', 'time_before_sending', 'time_after_sending', 'time_received'))
-			writer.writerows([(data.round, data.msg_payload, data.plr, data.time_before_sending, data.time_after_sending, data.time_received) for data in list])
+			#writer.writerow(('round', 'msg_payload', 'plr', 'time_before_sending', 'time_after_sending', 'time_received'))
+			#writer.writerows([(data.round, data.msg_payload, data.plr, data.time_before_sending, data.time_after_sending, data.time_received) for data in list])
+                        writer.writerow(('round', 'msg_payload', 'plr', 'time_before_sending', 'time_received', 'time_diff'))
+                        writer.writerows([(data.round, data.msg_payload, data.plr, data.time_before_sending, data.time_received, str(int(data.time_received) - int (data.time_before_sending))) for data in list])
 
 		elif g_test == 'latency':
-			writer.writerow(('msg', 'msg_payload', 'plr', 'time_before_sending', 'time_received'))
-			writer.writerows([(data.msg, data.payload, data.plr, data.time_before_sending, data.time_received) for data in list])
+			writer.writerow(('msg', 'msg_payload', 'plr', 'time_before_sending', 'time_received', 'time_diff'))
+			writer.writerows([(data.msg, data.payload, data.plr, data.time_before_sending, data.time_received, str(int(data.time_received) - int (data.time_before_sending))) for data in list])
 
 		elif g_test == 'cpu':
                         if list is None:
