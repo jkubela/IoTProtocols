@@ -150,7 +150,7 @@ def create_csv(csv_name, method, list):
 				print('results is none')
 				sys.exit()
 			writer.writerow(('msg_payload', 'plr', 'ts', 'latency', 'cpu'))
-                        writer.writerows([(data.payload, data.plr, data.ts, data.latency, data.cpu) for data in list])
+                        writer.writerows([(data.msg_payload, data.plr, data.latency, data.timestamp, data.cpu) for data in list])
 
 		else:
 			print('ATTENTION, CANNOT WRITE RESULTS - PLEASE EXPAND THE CREATE_CSV-METHOD')
