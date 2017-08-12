@@ -25,53 +25,63 @@ config = ConfigParser.RawConfigParser(allow_no_value = True)
 config.readfp(io.BytesIO(sample_config))
 
 ###Set xmpp globals and constans###
-xmpp = None
+xmpp    = None
 payload = None
 
-user = config.get('xmpp_server', 'user1')
-host = config.get('xmpp_server', 'host')
+user 	     = config.get('xmpp_server', 'user1')
+host 	     = config.get('xmpp_server', 'host')
 pubSubServer = config.get('xmpp_server', 'pubsub')
-jid = user + '@' + host
-pubNode = config.get('xmpp_c_general', 'node_pub')
-subNode = config.get('xmpp_c_general', 'node_sub')
-pw = config.get('xmpp_server', 'pw1')
-g_msg = None
+jid 	     = user + '@' + host
+pubNode      = config.get('xmpp_c_general', 'node_pub')
+subNode      = config.get('xmpp_c_general', 'node_sub')
+pw 	     = config.get('xmpp_server', 'pw1')
+g_msg 	     = None
 
 """*******************************************************************
-Main-Method: Set handlers and  a connection to the broker
+MAIN:
+-Set handlers
+-Connect to the broker
 *******************************************************************"""
 def main():
 
+	###Globals###
 	global xmpp
-	global payload
-	global g_msg
 	
-	xmpp = sleekxmpp.ClientXMPP(jid, pw)
-	xmpp.add_event_handler("session_start", on_start)
-	xmpp.add_event_handler("pubsub_publish", on_receive)
+        ###Connect to the broker and set handlers###
+        xmpp = sleekxmpp.ClientXMPP(jid, pw)
+        xmpp.add_event_handler("session_start", on_start)
+        xmpp.add_event_handler("pubsub_publish", on_receive)
 	xmpp.add_event_handler("message", on_message)
 
         xmpp.register_plugin('xep_0004') ###Dataforms
-	xmpp.register_plugin('xep_0060') ###PubSub
-	print('Connecting')
-	xmpp.connect()
-	xmpp.process(block=True)
+        xmpp.register_plugin('xep_0060') ###PubSub
+
+        try:
+                xmpp.connect()
+        except:
+                print('Cannot connect to the broker. Test failed!')
+                sys.exit()
+
+        xmpp.process(block=True)
 
 """*******************************************************************
-Message-Handler
+ON_MESSAGE: Is called when a message is received.
+-Set the message body as payload for the pubsub message-
 *******************************************************************"""
 def on_message(msg):
+	###Globals###
 	global payload
 	
-	body = msg['body']
+	body    = msg['body']
         payload = ET.fromstring("<test xmlns = 'test'>%s</test>" % body)
 
 """*******************************************************************
-Start-Handler: Is called when tThe connection is set.
-Try to create the sub and pub channel. Subscribe to the sub channel.
+ON_START: Is called when the connection is set.
+-Try to create the sub and pub channel.
+-Subscribe to the sub channel.
 *******************************************************************"""
 def on_start(event):
-	print('started')
+
 	xmpp.send_presence()
 	xmpp.get_roster()	
 	
@@ -90,19 +100,19 @@ def on_start(event):
         except:
                 print('SubNode cannot be created')
 
-	###Subscribe to a node###
-	xmpp['xep_0060'].subscribe(pubSubServer, subNode)
+        ###Subscribe to a node###
+        xmpp['xep_0060'].subscribe(pubSubServer, subNode, callback = on_sub)
 	
 """*******************************************************************
-Receive-Handler: Is called when a message at the sub channel is pub'ed.
-Anwser it by published a message by yourself.
+ON_RECEIVE: Is called when a message at the sub channel is pub'ed.
+-Anwser it by published a message by yourself.
 *******************************************************************"""
 def on_receive(i_msg):
 	xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
-	print('received')
 
 """*******************************************************************
-Init: Get userinput and call the Main-Method.
+INIT:Call the Main method.
 *******************************************************************"""
 if __name__ == '__main__':
 	main()
+	

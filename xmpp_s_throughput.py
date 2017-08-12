@@ -28,49 +28,54 @@ config = ConfigParser.RawConfigParser(allow_no_value = True)
 config.readfp(io.BytesIO(sample_config))
 
 ###Set xmpp globals and constans###
-xmpp = None
+xmpp    = None
 payload = None
 
-user = config.get('xmpp_server', 'user2')
-touser = config.get('xmpp_server', 'user1')
-host = config.get('xmpp_server', 'host')
+user 	     = config.get('xmpp_server', 'user2')
+touser 	     = config.get('xmpp_server', 'user1')
+host 	     = config.get('xmpp_server', 'host')
 pubSubServer = config.get('xmpp_server', 'pubsub')
-jid = user + '@' + host
-tojid = touser + '@' + host
-pubNode = config.get('xmpp_s_general', 'node_pub')
-subNode = config.get('xmpp_s_general', 'node_sub')
-pw = config.get('xmpp_server', 'pw2')
+jid          = user + '@' + host
+tojid 	     = touser + '@' + host
+pubNode      = config.get('xmpp_s_general', 'node_pub')
+subNode      = config.get('xmpp_s_general', 'node_sub')
+pw           = config.get('xmpp_server', 'pw2')
 
 ###Set analysis globals and constans###
 rounds     = 0
-startTime = 0
+startTime  = 0
 results    = []
-tReceive  = 0
-tSendB   = 0
-tSendA   = 0
+tReceive   = 0
+tSendB     = 0
+flagEnd = ' '
 
-secTest   = config.getint('xmpp_general', 'duration')
-msgPaySize = 0
-plr        = 0
-resultsStructure = namedtuple('Results','round msg_payload plr time_before_sending time_after_sending time_received')
-g_msg = None
+secTest    	 = config.getint('xmpp_general', 'duration')
+msgPaySize	 = 0
+plr        	 = 0
+latency		 = 0
+resultsStructure = namedtuple('Results','round msg_payload plr latency time_before_sending time_received')
+g_msg 		 = None
 
 """*******************************************************************
-Main-Method: Set handlers and a connection to the broker
+MAIN:
+-Set handlers 
+-Connect to the broker
 *******************************************************************"""
-def main(i_msg, i_plr):
+def main(i_msg, i_plr, i_latency):
 
+	###Globals###
 	global payload
 	global msgPaySize
 	global plr
 	global xmpp
 	global g_msg
+	global latency
 
-	###Set global variables and constants###
-        payload = ET.fromstring("<test xmlns = 'test'>%s</test>" % i_msg)
+        payload    = ET.fromstring("<test xmlns = 'test'>%s</test>" % i_msg)
         msgPaySize = len(i_msg)
-        plr = i_plr
-	g_msg = i_msg
+        plr 	   = i_plr
+	g_msg	   = i_msg
+	latency	   = i_latency
 
 	###Connect to the broker and set handlers###
 	xmpp = sleekxmpp.ClientXMPP(jid, pw)
@@ -80,12 +85,21 @@ def main(i_msg, i_plr):
 	xmpp.register_plugin('xep_0004') ###Dataforms
 	xmpp.register_plugin('xep_0060') ###PubSub
 
-	xmpp.connect()
+	try:
+		xmpp.connect()
+	except:
+		print('Cannot connect to the broker. Test failed!')
+		sys.exit()
+
 	xmpp.process(block=True)
 
+	if flagEnd == 'X':
+		return results
+
 """*******************************************************************
-Start-Handler: Is called when the connection is set.
-Try to create the sub and pub channel. Subscribe to the sub channel.
+ON_START: Is called when the connection is set.
+-Try to create the sub and pub channel.
+-Subscribe to the sub channel.
 *******************************************************************"""
 def on_start(event):
 
@@ -96,7 +110,7 @@ def on_start(event):
         xmpp.send_message(mto = tojid, mbody = g_msg, mtype='chat')
 
 	###Set the publish model of the nodes to open so every user can publish content###
-	form = xmpp['xep_0004'].stanza.Form()
+	form	     = xmpp['xep_0004'].stanza.Form()
 	form['type'] = 'submit'
 	form.add_field(var='pubsub#publish_model', value='open')
 	
@@ -114,23 +128,27 @@ def on_start(event):
 	xmpp['xep_0060'].subscribe(pubSubServer, subNode, callback = on_sub)
 
 """*******************************************************************
-Sub-Handler: Is called when we subscribed successfully.
-Publish a message at the pub channel.
+ON_SUB: Is called when we subscribed successfully.
+-Publish a message at the pub channel.
 *******************************************************************"""
 def on_sub(i_msg):
-	
+
+	###Globals###	
 	global tSendB
-	global tSendA
 
 	tSendB = int(round(time.time() * 1000 ))
-	xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
-	tSendA = int(round(time.time() * 1000 ))
+
+	try: 
+		xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
+	except:
+		print('Cannot publish at ' + pubNode + '. Test failed!')
 
 """*******************************************************************
-Receive-Handler: Is called when a message at the sub channel is pub'ed.
-Anwser it by published a message by yourself.
+ON_RECEIVE: Is called when a message at the sub channel is pub'ed.
+-Anwser it by published a message by yourself.
 *******************************************************************"""
 def on_receive(i_msg):
+	###Globals###
 	global rounds
 	global flagEnd
 	global startTime
@@ -142,7 +160,7 @@ def on_receive(i_msg):
 	tReceive = int(round(time.time() * 1000 ))
 	rounds = rounds + 1
         
-	node = resultsStructure(rounds, msgPaySize, plr, tSendB, tSendA, tReceive)
+	node = resultsStructure(rounds, msgPaySize, plr, latency, tSendB, tReceive)
         results.append(node)
 	
 	if startTime == 0:
@@ -151,25 +169,27 @@ def on_receive(i_msg):
 	if ((startTime + secTest) >= time.time()):
        		tSendB = int(round(time.time() * 1000 ))
 		xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
-	        tSendA = int(round(time.time() * 1000 ))
 	else:
-		xmpp.disconnect()
 		del results[0]
 		print('Finished')
-		return results
-		
+		flagEnd = 'X'
+		xmpp.disconnect()	
+
 """*******************************************************************
-Init: Get userinput and call the Main-Method.
+INIT: Get userinput and call the Main-Method.
 *******************************************************************"""
 if __name__ == '__main__':
-        optp = OptionParser()
-        optp.add_option("-m", "--message", dest="msg")
-        optp.add_option("-p", "--plr", dest="plr")
-        opts, args = optp.parse_args()
 
-        if opts.msg is not None and opts.plr:
-                main(opts.msg, opts.plr)
+        ###Get input-parameters###
+        parser = OptionParser()
+        parser.add_option('-m', '--message', dest='msg_payload', help='Payload of the message')
+        parser.add_option('-p', '--plr', dest='plr', help='Packet-Loss-Rate of the network')
+        parser.add_option('-l', '--latency', dest='latency', help='Latency of the network')
+        input, args = parser.parse_args()
+
+        ###Check if input-parameters are valid and call the main-method###
+        if (input.msg_payload is None) or (input.plr is None) or (input.latency is None):
+                print('Please enter a message, plr and latency')
         else:
-                print('Please enter a message and a PLR')
-
+                main(input.msg_payload, input.plr, input.latency)
 
