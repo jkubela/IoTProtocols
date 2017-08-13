@@ -175,7 +175,7 @@ if __name__ == "__main__":
 	parser = OptionParser()
 	parser.add_option('-m', '--message', dest='msg_payload', help='Payload of the message')
         parser.add_option('-p', '--plr', dest='plr', help='Packet-Loss-Rate of the network')
-	parser.add_option('l', '--latency', dest='latency')
+	parser.add_option('-l', '--latency', dest='latency')
         input, args = parser.parse_args()
 
         if input.msg_payload is None or input.plr is None:

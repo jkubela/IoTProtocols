@@ -95,11 +95,12 @@ def on_callback(channel, method, header, body):
 	t_received = int(round(time.time() * 1000))
 	
 	if msg_payload == 'Stop':
-		print('Deconnecting...')
-		connection.close()
-		connection = None
-		print('Reconnecting...')
-		main()
+		#print('Deconnecting...')
+		#connection.close()
+		#connection = None
+		#print('Reconnecting...')
+		#main()
+		print('New test')
 	else:
 		send_payload = str(t_received)
 		print(send_payload)
