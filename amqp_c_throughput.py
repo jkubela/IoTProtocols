@@ -43,6 +43,7 @@ def main():
         credentials = pika.PlainCredentials(user, pw)
         parameters = pika.ConnectionParameters(br_host, br_port, '/', credentials)
         connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect)
+#	connection.RequestHeartbeat = 600
 	
 	###Stay connected###
         connection.ioloop.start()

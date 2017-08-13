@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
         opts, args = optp.parse_args()
 
-        if (opts.msg is not None) and (opts.plr is not None) and opts.latency is not None):
+        if (opts.msg is not None) and (opts.plr is not None) and (opts.latency is not None):
                 main(opts.msg, opts.plr, opts.latency)
         else:
                 print('Please enter a message, PLR and latency')
