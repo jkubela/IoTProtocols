@@ -55,7 +55,6 @@ Opens a channel to the broker
 ***********************************************************"""
 def on_connect(connection):
 
-        print('Connected to broker ' + str(br_host) + ':' + str(br_port))
         connection.channel(on_channel_open)
 
 """***********************************************************
@@ -83,7 +82,6 @@ def on_reversequeue_declared(frame):
 
 	###Subscribe to the given queue###
 	channel.basic_consume(on_callback, queue=ch_sub, no_ack=ch_ack)        
-        print('Subscribed to topic ' + str(ch_sub))
 
 """************************************************************
 On_Callback: Behaviour after receiving a message

@@ -88,7 +88,7 @@ Anwser it by sending a message with the receive TS back.
 *******************************************************************"""
 def on_receive(i_msg):
 	data = i_msg['pubsub_event']['items']['item']['payload']
-	print(tostring(data))
+
 	t_receive = int(round(time.time() * 1000 ))
 	msg = str(t_receive)
 	xmpp.send_message(mto=toId, mbody=msg, mtype='chat')

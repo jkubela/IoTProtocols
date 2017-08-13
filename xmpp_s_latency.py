@@ -43,26 +43,30 @@ pw = config.get('xmpp_server', 'pw2')
 rounds     = 0
 results    = []
 tSend   = 0
+flagEnd = None
 
 roundsTotal = config.getint('xmpp_general', 'msg_amount')
 msgPaySize = 0
 plr        = 0
-resultsStructure = namedtuple('Results','round msg_payload plr time_before_sending time_received')
+resultsStructure = namedtuple('Results','round msg_payload plr latency time_before_sending time_received')
+latency = 0
 
 """*******************************************************************
 Main-Method: Set handlers and  a connection to the broker
 *******************************************************************"""
-def main(i_msg, i_plr):
+def main(i_msg, i_plr, i_latency):
 
 	global payload
 	global msgPaySize
 	global plr
 	global xmpp
+	global latency
 
 	###Set global variables and constants###
         payload = ET.fromstring("<test xmlns = 'test'>%s</test>" % i_msg)
         msgPaySize = len(i_msg)
         plr = i_plr
+	latency = i_latency
 
 	###Connect to the broker and set handlers###
 	xmpp = sleekxmpp.ClientXMPP(jid, pw)
@@ -74,6 +78,9 @@ def main(i_msg, i_plr):
 
 	xmpp.connect()
 	xmpp.process(block=True)
+
+	if flagEnd == 'X':
+		return results
 
 """*******************************************************************
 Start-Handler: Is called when tThe connection is set.
@@ -112,23 +119,23 @@ def on_message(msg):
         global rounds
         global results
         global tSend
-	
+	global endFlag	
+
 	tReceive = msg['body']
 	rounds = rounds + 1
-	t = int(tReceive) - tSend
-	print(str(t))	
+	t = int(tReceive) - tSend	
 
-	node = resultsStructure(rounds, msgPaySize, plr, tSend, tReceive)
+	node = resultsStructure(rounds, msgPaySize, plr, latency, tSend, tReceive)
         results.append(node)
 	
         if rounds <= roundsTotal:
 		tSend = int(round(time.time() * 1000 ))
         	xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
 	else:
-                xmpp.disconnect()
                 del results[0]
-                print('Finished')
-                print results
+                print('Finished successful')
+                endFlag = 'X'
+		xmpp.disconnect()
 
 """*******************************************************************
 Sub-Handler: Is called when we subscribed successfully.
@@ -139,7 +146,6 @@ def on_sub(i_msg):
 
 	tSend = int(round(time.time() * 1000 ))
         xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
-	print('MSG published')
 
 """*******************************************************************
 Init: Get userinput and call the Main-Method.
@@ -148,9 +154,11 @@ if __name__ == '__main__':
         optp = OptionParser()
         optp.add_option("-m", "--message", dest="msg")
         optp.add_option("-p", "--plr", dest="plr")
+        optp.add_option("-l", "--latency", dest="latency")
+
         opts, args = optp.parse_args()
 
-        if opts.msg is not None and opts.plr:
-                main(opts.msg, opts.plr)
+        if (opts.msg is not None) and (opts.plr is not None) and opts.latency is not None):
+                main(opts.msg, opts.plr, opts.latency)
         else:
-                print('Please enter a message and a PLR')
+                print('Please enter a message, PLR and latency')

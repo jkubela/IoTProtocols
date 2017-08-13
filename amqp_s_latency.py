@@ -24,7 +24,7 @@ br_host  = config.get('amqp_address', 'broker_host')
 br_port  = config.getint('amqp_address', 'broker_port')
 
 #Message characteristics
-msg_payload = None				#Message payload: Given with initial script call
+msg_payload = None
 msg_amount = config.getint('amqp_general', 'msg_amount')
 
 #Channels
@@ -40,12 +40,13 @@ start_time = 0
 sec_test   = config.getint('amqp_general', 'duration')
 results    = []
 msg_pay_size = 0
-plr        = 0                                  #Packet-Loss-Rate: Given with initial script call
-t_receive  = 0                                                  #Message received (time): Set at on_message
-t_send_b   = 0                                                  #Message send (time before)
-results_structure = namedtuple('Results','msg payload plr time_before_sending time_received')
+plr        = 0 
+t_receive  = 0
+t_send_b   = 0
+results_structure = namedtuple('Results','msg payload plr latency time_before_sending time_received')
 flag_end = ' '
 counter = 0
+latency = 0
 
 #User
 user = config.get('amqp_server', 'user2')
@@ -55,18 +56,20 @@ pw = config.get('amqp_server', 'pw2')
 Main-Method: Used after starting the script
 Connecting to the given host forever
 ************************************************************"""
-def main(i_payload, i_plr):
+def main(i_payload, i_plr, i_latency):
 
         global msg_payload
         global plr
         global msg_pay_size
 	global connection
+	global latency
 
         ###Set the globals###
         msg_payload = i_payload
         msg_pay_size = len(msg_payload)
         plr = i_plr
-        
+	latency = i_latency        
+
 	###Connect to the broker###
         credentials = pika.PlainCredentials(user, pw)
         parameters = pika.ConnectionParameters(br_host, br_port, '/', credentials)
@@ -87,7 +90,6 @@ Opens a channel to the broker
 ***********************************************************"""
 def on_connect(connection):
 
-        print('Connected to broker ' + str(br_host) + ':' + str(br_port))
         connection.channel(on_channel_open)
 
 """***********************************************************
@@ -117,7 +119,6 @@ def on_reversequeue_declared(frame):
 
 	###Subscribe to the given queue###
 	channel.basic_consume(on_callback, queue=ch_sub, no_ack=ch_ack)        
-        print('Subscribed to topic ' + str(ch_sub))
 
         ###Send an initial message to start the test###
 	send_msg()
@@ -146,7 +147,7 @@ def on_callback(channel, method, header, body):
 		t_receive = body
 
 		###Append the output-structure###
-        	node = results_structure(counter, str(msg_pay_size), str(plr), str(t_send_b), str(t_receive))
+        	node = results_structure(counter, str(msg_pay_size), str(plr),str(latency), str(t_send_b), str(t_receive))
         	results.append(node)
 		
 		send_msg()
@@ -174,9 +175,10 @@ if __name__ == "__main__":
 	parser = OptionParser()
 	parser.add_option('-m', '--message', dest='msg_payload', help='Payload of the message')
         parser.add_option('-p', '--plr', dest='plr', help='Packet-Loss-Rate of the network')
+	parser.add_option('l', '--latency', dest='latency')
         input, args = parser.parse_args()
 
         if input.msg_payload is None or input.plr is None:
-                print('Please enter a message and the plr')
+                print('Please enter a message, PLR and latency')
         else:
-                main(input.msg_payload, input.plr)
+                main(input.msg_payload, input.plr, input.latency)

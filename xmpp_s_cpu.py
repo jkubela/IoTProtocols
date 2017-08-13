@@ -54,18 +54,20 @@ flagEnd = ' '
 secTest   = config.getint('xmpp_general', 'duration')
 msgPaySize = 0
 plr        = 0
-resultsStructure = namedtuple('Results','msg_payload plr timestamp cpu')
+resultsStructure = namedtuple('Results','msg_payload plr latency timestamp cpu')
+latency = 0
 
 """*******************************************************************
 Main-Method: Set handlers and a connection to the broker
 *******************************************************************"""
-def main(i_msg, i_plr):
+def main(i_msg, i_plr, i_latency):
 
 	global payload
 	global msgPaySize
 	global plr
 	global xmpp
 	global results
+	global latency
 
         ###Set the CPU measurement###
         q = Queue.Queue()
@@ -75,6 +77,7 @@ def main(i_msg, i_plr):
         payload = ET.fromstring("<test xmlns = 'test'>%s</test>" % i_msg)
         msgPaySize = len(i_msg)
         plr = i_plr
+	latency = i_latency
 
 	###Connect to the broker and set handlers###
 	xmpp = sleekxmpp.ClientXMPP(jid, pw)
@@ -87,6 +90,9 @@ def main(i_msg, i_plr):
 	xmpp.connect()
 	xmpp.process(block=True)
 
+	if flagEnd ==  'X':
+		return results
+
 """***********************************************************
 Measure_Cpu:
 ***********************************************************"""
@@ -95,7 +101,7 @@ def measure_cpu(results, q):
         while flagEnd != 'X':
                 cpu = psutil.cpu_percent(interval=1)
                 ts = int(round(time.time() * 1000 ))
-                node = resultsStructure(msgPaySize, plr, ts, cpu)
+                node = resultsStructure(msgPaySize, plr, latency, ts, cpu)
                 results.append(node)
                 q.put(results)
         return results
@@ -133,41 +139,30 @@ Publish a message at the pub channel.
 *******************************************************************"""
 def on_sub(i_msg):
 	
-	global tSendB
-	global tSendA
-
-	tSendB = int(round(time.time() * 1000 ))
 	xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
-	tSendA = int(round(time.time() * 1000 ))
-
+	
 """*******************************************************************
 Receive-Handler: Is called when a message at the sub channel is pub'ed.
 Anwser it by published a message by yourself.
 *******************************************************************"""
 def on_receive(i_msg):
-	global rounds
 	global flagEnd
 	global startTime
 	global results
 	global node
-	global tSendB
-	global tSendA
-
-	rounds = rounds + 1
-	
+		
 	if startTime == 0:
 		startTime = time.time()
 	
 	if ((startTime + secTest) >= time.time()):
 		xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
 	else:
-		xmpp.disconnect()
 		del results[0]
-		print('Finished')
+		print('Finished successful')
 		flagEnd = 'X'
 		time.sleep(5)
-		print results
-		
+		xmpp.disconnect()	
+	
 """*******************************************************************
 Init: Get userinput and call the Main-Method.
 *******************************************************************"""
@@ -175,11 +170,12 @@ if __name__ == '__main__':
         optp = OptionParser()
         optp.add_option("-m", "--message", dest="msg")
         optp.add_option("-p", "--plr", dest="plr")
+	optp.add_option("-l", "--latency", dest="latency")
         opts, args = optp.parse_args()
 
-        if opts.msg is not None and opts.plr:
-                main(opts.msg, opts.plr)
+        if opts.msg is not None and opts.plr is not None and opts.latency is not None:
+                main(opts.msg, opts.plr, opts.latency)
         else:
-                print('Please enter a message and a PLR')
+                print('Please enter a message, PLR and latency')
 
 
