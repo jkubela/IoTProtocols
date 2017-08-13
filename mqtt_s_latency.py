@@ -31,7 +31,7 @@ plr		  = None
 latency 	  = None
 msg_pay_size 	  = 0
 client 		  = mqtt.Client()
-results_structure = namedtuple('Results','msg payload plr time_before_sending time_received')
+results_structure = namedtuple('Results','msg payload plr latency time_before_sending time_received')
 t_send 		  = 0
 counter 	  = 0
 flag_end 	  = None
@@ -49,6 +49,7 @@ def main(i_payload, i_plr, i_latency):
 	global msg_payload
 	global plr
 	global msg_pay_size
+	global latency
 
 	msg_payload  = i_payload
 	msg_pay_size = len(msg_payload)
@@ -105,7 +106,7 @@ def on_message(client, userdata, msg):
 
 		###Append the output structure###
 		t_received = msg.payload.decode()
-        	node 	   = results_structure(counter, msg_pay_size, plr, t_send, t_received)
+        	node 	   = results_structure(counter, msg_pay_size, plr, latency, t_send, t_received)
         	results.append(node)
 		
 		###Publish a new message###

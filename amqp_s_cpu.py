@@ -40,7 +40,7 @@ connection = None
 #Helper
 rounds     = 0
 start_time = 0
-sec_test   = config.getint('amqp_general', 'duration')
+sec_test   = config.getint('amqp_general', 'cpu_duration')
 results    = []
 msg_pay_size = 0
 plr        = '0%'                                               #Packet-Loss-Rate: Given with initial script call
