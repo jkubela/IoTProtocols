@@ -48,7 +48,7 @@ flagEnd = None
 roundsTotal = config.getint('xmpp_general', 'msg_amount')
 msgPaySize = 0
 plr        = 0
-resultsStructure = namedtuple('Results','round msg_payload plr latency time_before_sending time_received')
+resultsStructure = namedtuple('Results','msg payload plr latency time_before_sending time_received')
 latency = 0
 
 """*******************************************************************
@@ -119,11 +119,9 @@ def on_message(msg):
         global rounds
         global results
         global tSend
-	global endFlag	
+	global flagEnd	
 
 	tReceive = msg['body']
-	rounds = rounds + 1
-	t = int(tReceive) - tSend	
 
 	node = resultsStructure(rounds, msgPaySize, plr, latency, tSend, tReceive)
         results.append(node)
@@ -131,11 +129,12 @@ def on_message(msg):
         if rounds <= roundsTotal:
 		tSend = int(round(time.time() * 1000 ))
         	xmpp['xep_0060'].publish(pubSubServer, pubNode, payload = payload)
-	else:
+		rounds = rounds + 1
+        else:
                 del results[0]
-                print('Finished successful')
-                endFlag = 'X'
-		xmpp.disconnect()
+                print('Finished')
+                flagEnd = 'X'
+                xmpp.disconnect()
 
 """*******************************************************************
 Sub-Handler: Is called when we subscribed successfully.

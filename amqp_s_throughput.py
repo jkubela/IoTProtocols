@@ -73,13 +73,14 @@ def main(i_payload, i_plr, i_latency):
 	###Connect to the broker###
         credentials = pika.PlainCredentials(user, pw)
         parameters = pika.ConnectionParameters(br_host, br_port, '/', credentials)
-        connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect)
-	
+        connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect, stop_ioloop_on_close=False)
+
 	###Stay connected###
 	connection.ioloop.start()
 
 	if flag_end == 'X':
 		return results
+
 
 """***********************************************************
 On_Connect: Behaviour after connection to the broker is set
@@ -164,7 +165,12 @@ def on_answer(body):
         t_send_b = int(round(time.time() * 1000 ))
 
         ###Send the message###
-        channel.basic_publish(exchange ='', routing_key = ch_pub, body = body)
+        try:
+		channel.basic_publish(exchange ='', routing_key = ch_pub, body = body)
+	except:
+		print('Except')
+		channel.basic_publish(exchange ='', routing_key = ch_pub, body = body)
+	
 
 """************************************************************
 On_Stop_Msg: Called at the end of the roundtrip
@@ -174,7 +180,7 @@ def on_stop_msg():
 	
 	global flag_end
        
-	#channel.basic_publish(exchange ='', routing_key = ch_pub, body = "Stop")	
+	channel.basic_publish(exchange ='', routing_key = ch_pub, body = "Stop")	
         channel.close()
         connection.close()
         connection.ioloop.start()
