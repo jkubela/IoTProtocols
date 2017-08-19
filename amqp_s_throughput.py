@@ -180,7 +180,7 @@ def on_stop_msg():
 	
 	global flag_end
        
-	channel.basic_publish(exchange ='', routing_key = ch_pub, body = "Stop")	
+	#channel.basic_publish(exchange ='', routing_key = ch_pub, body = "Stop")	
         channel.close()
         connection.close()
         connection.ioloop.start()
