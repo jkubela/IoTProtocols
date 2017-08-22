@@ -72,27 +72,14 @@ def main(i_payload, i_plr, i_latency):
 
 	###Connect to the broker###
         credentials = pika.PlainCredentials(user, pw)
-<<<<<<< HEAD
-        parameters = pika.ConnectionParameters(host=br_host, port=br_port, virtual_host='/', credentials=credentials, heartbeat_interval=0, connection_attempts=10, socket_timeout=600)
-        connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect, on_close_callback=on_close, stop_ioloop_on_close=False)
-	
-=======
         parameters = pika.ConnectionParameters(br_host, br_port, '/', credentials)
-        connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect, stop_ioloop_on_close=False)
-
->>>>>>> fdd38bcf7314090d3d63389b9832c367f3897398
+        connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect)
+	
 	###Stay connected###
 	connection.ioloop.start()
 
 	if flag_end == 'X':
-		connection.ioloop.stop()
 		return results
-
-<<<<<<< HEAD
-def on_close(connection, reply_code, reply_text):
-	connection.add_timeout(1, connection.ioloop.stop)
-=======
->>>>>>> fdd38bcf7314090d3d63389b9832c367f3897398
 
 """***********************************************************
 On_Connect: Behaviour after connection to the broker is set
@@ -177,12 +164,7 @@ def on_answer(body):
         t_send_b = int(round(time.time() * 1000 ))
 
         ###Send the message###
-        try:
-		channel.basic_publish(exchange ='', routing_key = ch_pub, body = body)
-	except:
-		print('Except')
-		channel.basic_publish(exchange ='', routing_key = ch_pub, body = body)
-	
+        channel.basic_publish(exchange ='', routing_key = ch_pub, body = body)
 
 """************************************************************
 On_Stop_Msg: Called at the end of the roundtrip
@@ -191,10 +173,9 @@ Send stop message
 def on_stop_msg():
 	
 	global flag_end
-	global connection
        
 	#channel.basic_publish(exchange ='', routing_key = ch_pub, body = "Stop")	
-        #channel.close()
+        channel.close()
         connection.close()
         connection.ioloop.start()
         print("Done")
