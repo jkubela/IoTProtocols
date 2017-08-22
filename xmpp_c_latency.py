@@ -60,7 +60,7 @@ Start-Handler: Is called when the connection is set.
 Try to create the sub and pub channel. Subscribe to the sub channel.
 *******************************************************************"""
 def on_start(event):
-
+	print("started")
         xmpp.send_presence()
         xmpp.get_roster()
 
@@ -92,6 +92,7 @@ def on_receive(i_msg):
 	t_receive = int(round(time.time() * 1000 ))
 	msg = str(t_receive)
 	xmpp.send_message(mto=toId, mbody=msg, mtype='chat')
+	print("received")
 
 """*******************************************************************
 Init: Get userinput and call the Main-Method.

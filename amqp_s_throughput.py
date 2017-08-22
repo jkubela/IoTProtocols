@@ -72,14 +72,18 @@ def main(i_payload, i_plr, i_latency):
 
 	###Connect to the broker###
         credentials = pika.PlainCredentials(user, pw)
-        parameters = pika.ConnectionParameters(br_host, br_port, '/', credentials)
-        connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect)
+        parameters = pika.ConnectionParameters(host=br_host, port=br_port, virtual_host='/', credentials=credentials, heartbeat_interval=0, connection_attempts=10, socket_timeout=600)
+        connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect, on_close_callback=on_close, stop_ioloop_on_close=False)
 	
 	###Stay connected###
 	connection.ioloop.start()
 
 	if flag_end == 'X':
+		connection.ioloop.stop()
 		return results
+
+def on_close(connection, reply_code, reply_text):
+	connection.add_timeout(1, connection.ioloop.stop)
 
 """***********************************************************
 On_Connect: Behaviour after connection to the broker is set
@@ -173,9 +177,10 @@ Send stop message
 def on_stop_msg():
 	
 	global flag_end
+	global connection
        
 	#channel.basic_publish(exchange ='', routing_key = ch_pub, body = "Stop")	
-        channel.close()
+        #channel.close()
         connection.close()
         connection.ioloop.start()
         print("Done")

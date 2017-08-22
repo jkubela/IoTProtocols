@@ -117,7 +117,7 @@ def main(i_protocol, i_test):
                                 
 				###Start the test###
 				i_results = g_server_script.main(msg, plr, latency)
-
+	
 				###Create the output###
                                 csvName = g_dir + '/' + i_protocol + '_' + i_test
                                 create_csv(csvName, 'a+', i_results)

@@ -107,10 +107,8 @@ def on_connect(client, userdata, flags, rc):
         except:
                 ('Cannot subscribe to ' + ch_sub + '. Test failed!')
                 sys.exit()
-
-      	###Send a initial message to start the test###
-        t_send_b = int(round(time.time() * 1000 ))
-        try:
+        
+	try:
                 client.publish(ch_pub, msg_payload, msg_qos, msg_retain)
         except:
                 print('Cannot publish at ' + ch_pub + '. Test failed!')

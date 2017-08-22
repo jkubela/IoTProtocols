@@ -64,6 +64,7 @@ Send the message back.
 ************************************************************"""
 def on_message(client, userdata, msg):
 
+        rec_payload = msg.payload.decode()
 	client.publish(ch_pub,msg.payload,msg.qos,msg.retain)
 
 """************************************************************

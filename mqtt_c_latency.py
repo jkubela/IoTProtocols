@@ -78,14 +78,16 @@ def on_message(client, userdata, msg):
 	###Check if the test is finished###
 	if rec_payload == 'Stop':
 		#reconnect
-		print('Disconnecting...')
-		g_client.unsubscribe(ch_sub)
-		g_client.disconnect()
-		g_client = mqtt.Client()
-		rec_payload = None
-		ts_receive = 0
-		print('Reconnecting...')
-		main()
+		send_payload = str(ts_receive)
+                client.publish(ch_pub,send_payload,0,False)
+		print('Next...')
+		#g_client.unsubscribe(ch_sub)
+		#g_client.disconnect()
+		#g_client = mqtt.Client()
+		#rec_payload = None
+		#ts_receive = 0
+		#print('Reconnecting...')
+		#main()
 	else:
 		#return the timestamp	
 		send_payload = str(ts_receive)

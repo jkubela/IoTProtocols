@@ -48,7 +48,7 @@ flagEnd = None
 roundsTotal = config.getint('xmpp_general', 'msg_amount')
 msgPaySize = 0
 plr        = 0
-resultsStructure = namedtuple('Results','round msg_payload plr latency time_before_sending time_received')
+resultsStructure = namedtuple('Results','msg payload plr latency time_before_sending time_received')
 latency = 0
 
 """*******************************************************************
@@ -119,7 +119,7 @@ def on_message(msg):
         global rounds
         global results
         global tSend
-	global endFlag	
+	global flagEnd	
 
 	tReceive = msg['body']
 	rounds = rounds + 1
@@ -134,7 +134,7 @@ def on_message(msg):
 	else:
                 del results[0]
                 print('Finished successful')
-                endFlag = 'X'
+                flagEnd = 'X'
 		xmpp.disconnect()
 
 """*******************************************************************

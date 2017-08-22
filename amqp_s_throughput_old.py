@@ -22,10 +22,10 @@ config.readfp(io.BytesIO(sample_config))
 #Broker
 br_host  = config.get('amqp_address', 'broker_host')
 br_port  = config.getint('amqp_address', 'broker_port')
+br_alive = config.getint('amqp_broker', 'alive')
 
 #Message characteristics
-msg_payload = None
-msg_amount = config.getint('amqp_general', 'msg_amount')
+msg_payload = 'default'                                         #Message payload: Given with initial script call
 
 #Channels
 ch_pub = config.get('amqp_s_general', 'topic_pub')
@@ -40,13 +40,13 @@ start_time = 0
 sec_test   = config.getint('amqp_general', 'duration')
 results    = []
 msg_pay_size = 0
-plr        = 0 
-t_receive  = 0
-t_send_b   = 0
-results_structure = namedtuple('Results','msg payload plr latency time_before_sending time_received')
+plr        = '0%'                                               #Packet-Loss-Rate: Given with initial script call
+t_receive  = 0                                                  #Message received (time): Set at on_message
+t_send_b   = 0                                                  #Message send (time before)
+t_send_a   = 0                                                  #Message send (time after)
+results_structure = namedtuple('Results','round msg_payload plr latency time_before_sending time_received')
 flag_end = ' '
-counter = 0
-latency = 0
+latency = None
 
 #User
 user = config.get('amqp_server', 'user2')
@@ -68,20 +68,17 @@ def main(i_payload, i_plr, i_latency):
         msg_payload = i_payload
         msg_pay_size = len(msg_payload)
         plr = i_plr
-	latency = i_latency        
+	latency = i_latency
 
 	###Connect to the broker###
         credentials = pika.PlainCredentials(user, pw)
-        parameters = pika.ConnectionParameters(host=br_host, port=br_port, virtual_host='/', credentials=credentials, heartbeat_interval=0, connection_attempts=10, socket_timeout=600)
+        parameters = pika.ConnectionParameters(br_host, br_port, '/', credentials)
         connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_connect)
-
-
+	
 	###Stay connected###
 	connection.ioloop.start()
 
-	###Return the results when the test is over###
 	if flag_end == 'X':
-		print(results)
 		return results
 
 """***********************************************************
@@ -90,11 +87,12 @@ Opens a channel to the broker
 ***********************************************************"""
 def on_connect(connection):
 
+        print('Connected to broker ' + str(br_host) + ':' + str(br_port))
         connection.channel(on_channel_open)
 
 """***********************************************************
 On_Channel_Open: Behaviour after the channel is opened
-Declare the queue
+Subscribes to the queue
 ***********************************************************"""
 def on_channel_open(new_channel):
 
@@ -105,12 +103,13 @@ def on_channel_open(new_channel):
 
 """***********************************************************
 On_Queue_Declared / On_Reversequeue_Declared:
+Behaviour after the queue is subscribed
 Consume the reverse-queue
 ***********************************************************"""
 def on_queue_declared(frame):
 
 	###Before we can consume the reverse-queue
-	#we got to make sure that the queue exisits###
+	### we got to make sure that the queue exisits###
 	channel.queue_declare(queue=ch_sub, callback=on_reversequeue_declared)
 
 def on_reversequeue_declared(frame):
@@ -119,55 +118,69 @@ def on_reversequeue_declared(frame):
 
 	###Subscribe to the given queue###
 	channel.basic_consume(on_callback, queue=ch_sub, no_ack=ch_ack)        
+        print('Subscribed to topic ' + str(ch_sub))
 
-        ###Send an initial message to start the test###
-	send_msg()
-
-"""************************************************************
-Send_Msg:Send a messagSend a message
-************************************************************"""        
-def send_msg():
-
-	global t_send_b
-
-	t_send_b = int(round(time.time() * 1000 ))
+        ###Send a initial message to start the test###
+        t_send_b = int(round(time.time() * 1000 ))
         channel.basic_publish(exchange = '', routing_key = ch_pub, body = msg_payload)
 
 """************************************************************
 On_Callback: Behaviour after receiving a message
-Append the results and send a new  message
+Send the message back
 ************************************************************"""
 def on_callback(channel, method, header, body):
 
-        global counter
+        global rounds
+        global start_time
+        global t_receive
         global results
 	
-	if counter <= msg_amount:
-		counter = counter + 1
-		t_receive = body
+	#print('Message received: ' + body)
+        t_receive = int(round(time.time() * 1000 ))
 
-		###Append the output-structure###
-        	node = results_structure(counter, str(msg_pay_size), str(plr),str(latency), str(t_send_b), str(t_receive))
-        	results.append(node)
-		
-		send_msg()
-	else:
-		stop_test()
+	###Append the output-structure###
+        node = results_structure(rounds, str(msg_pay_size), str(plr), str(latency), t_send_b, t_receive)
+        results.append(node)
+
+        if start_time == 0:
+                start_time = time.time()
+
+        if ((start_time + sec_test) >= time.time()):
+                on_answer(body)
+                rounds += 1
+        else:
+             	del results[0]
+		on_stop_msg()
+
+"""*************************************************************
+Answer to a received message:
+Send the given message back
+*************************************************************"""
+def on_answer(body):
+
+        global t_send_b
+
+        ###Get the time before sending the message###
+        t_send_b = int(round(time.time() * 1000 ))
+
+        ###Send the message###
+        channel.basic_publish(exchange ='', routing_key = ch_pub, body = body)
 
 """************************************************************
-Stop_Test:
+On_Stop_Msg: Called at the end of the roundtrip
+Send stop message
 ************************************************************"""
-def stop_test():
+def on_stop_msg():
 	
 	global flag_end
        
-	channel.basic_publish(exchange ='', routing_key = ch_pub, body = "Stop")
+	#channel.basic_publish(exchange ='', routing_key = ch_pub, body = "Stop")	
+        channel.close()
+        connection.close()
+        connection.ioloop.start()
+        print("Done")
 	flag_end = 'X'
-	channel.close()
-	connection.close()
-	connection.ioloop.start()
-	print("Done")
-	
+
 """**********************************************************************
 Call the Main-Method when the script is called
 *********************************************************************"""
@@ -179,6 +192,6 @@ if __name__ == "__main__":
         input, args = parser.parse_args()
 
         if input.msg_payload is None or input.plr is None:
-                print('Please enter a message, PLR and latency')
+                print('Please enter a message, plr and latency')
         else:
                 main(input.msg_payload, input.plr, input.latency)
